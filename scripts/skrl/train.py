@@ -86,6 +86,10 @@ from isaaclab_rl.skrl import SkrlVecEnvWrapper
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
+# Allow to run without install the package
+current_file = os.path.abspath(__file__)
+project_root = os.path.abspath(os.path.join(current_file, "../../../source/SO_100"))
+sys.path.insert(0, project_root)
 import SO_100.tasks  # noqa: F401
 
 # config shortcuts

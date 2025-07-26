@@ -91,6 +91,10 @@ from isaaclab_rl.skrl import SkrlVecEnvWrapper
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
 
+# Allow to run without install the package
+current_file = os.path.abspath(__file__)
+project_root = os.path.abspath(os.path.join(current_file, "../../../source/SO_100"))
+sys.path.insert(0, project_root)
 import SO_100.tasks  # noqa: F401
 
 # config shortcuts

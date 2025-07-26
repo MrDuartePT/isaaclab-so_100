@@ -15,6 +15,7 @@ with `Isaac` in their name.
 
 """Launch Isaac Sim Simulator first."""
 
+import os, sys
 from isaaclab.app import AppLauncher
 
 # launch omniverse app
@@ -27,6 +28,10 @@ simulation_app = app_launcher.app
 import gymnasium as gym
 from prettytable import PrettyTable
 
+# Allow to run without install the package
+current_file = os.path.abspath(__file__)
+project_root = os.path.abspath(os.path.join(current_file, "../../source/SO_100"))
+sys.path.insert(0, project_root)
 import SO_100.tasks  # noqa: F401
 
 
