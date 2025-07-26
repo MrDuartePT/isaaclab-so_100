@@ -14,14 +14,13 @@ The following configurations are available:
 import os
 import math
 
+from ament_index_python.packages import get_package_share_directory
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 
-# Note: Use forward slashes for paths even on Windows
-# Construct the absolute path to the USD file relative to this script's location
-_THIS_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SO100_USD_PATH = os.path.join(_THIS_SCRIPT_DIR, "asset", "SO-ARM101-ROS2.usd")
+usd_package = get_package_share_directory("so101_description")
+SO100_USD_PATH=os.path.join(usd_package, "urdf", "so101_ROS2.usd")
 ##
 # Configuration
 ##
