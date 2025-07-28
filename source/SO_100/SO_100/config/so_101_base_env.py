@@ -17,6 +17,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
+from isaaclab.sensors import CameraCfg, RayCasterCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg, UsdFileCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
@@ -30,19 +31,21 @@ from . import mdp
 
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
-    """Configuration for the lift scene with a robot and a object.
+    """Configuration for any scene with a robot and a object.
     This is the abstract base implementation, the exact scene is defined in the derived classes
     which need to set the target object, robot and end-effector frames
     """
 
     # robots: will be populated by agent env cfg
     robot: ArticulationCfg = MISSING
+    # robot_raycaster: will be populated by agent env cfg
+    #robot_raycaser: RayCasterCfg = MISSING
     # end-effector sensor: will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg
     object: RigidObjectCfg | DeformableObjectCfg = MISSING
     # cube marker: will be populated by agent env cfg
-    cube_marker: FrameTransformerCfg = MISSING
+    marker: FrameTransformerCfg = MISSING
 
     # Table
     table = AssetBaseCfg(
@@ -68,7 +71,6 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
 ##
 # MDP settings
 ##
-
 
 @configclass
 class CommandsCfg:
@@ -123,88 +125,9 @@ class EventCfg:
 
     reset_all = EventTerm(func=mdp.reset_scene_to_default, mode="reset")
 
-    # reset_object_position = EventTerm(
-    #     func=mdp.reset_root_state_uniform,
-    #     mode="reset",
-    #     params={
-    #         "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
-    #         "velocity_range": {},
-    #         "asset_cfg": SceneEntityCfg("object", body_names="Object"),
-    #     },
-    # )
-
-
 @configclass
-class RewardsCfg:
-    """Reward terms for the MDP."""
-
-    # Reaching reward with lower weight
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.05}, weight=2)
-
-    # Lifting reward with higher weight
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=25.0)
-
-    # Action penalty to encourage smooth movements
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
-
-    # Joint velocity penalty to prevent erratic movements
-    joint_vel = RewTerm(
-        func=mdp.joint_vel_l2,
-        weight=-1e-4,
-        params={"asset_cfg": SceneEntityCfg("robot")},
-    )
-
-
-@configclass
-class TerminationsCfg:
-    """Termination terms for the MDP."""
-
-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
-
-    object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
-    )
-
-
-# @configclass
-class CurriculumCfg:
-#     """Curriculum terms for the MDP."""
-
-#     # Stage 1: Focus on reaching
-#     # Start with higher reaching reward, then gradually decrease it
-#     reaching_reward = CurrTerm(
-#         func=mdp.modify_reward_weight, 
-#         params={"term_name": "reaching_object", "weight": 1.0, "num_steps": 6000}
-#     )
-
-#     # Stage 2: Transition to lifting
-#     # Start with lower lifting reward, gradually increase to encourage lifting behavior
-#     lifting_reward = CurrTerm(
-#         func=mdp.modify_reward_weight, 
-#         params={"term_name": "lifting_object", "weight": 35.0, "num_steps": 8000}
-#     )
-
-    # Stage 4: Stabilize the policy
-    # Gradually increase action penalties to encourage smoother, more stable movements
-    action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "action_rate", "weight": -5e-4, "num_steps": 12000}
-    )
-
-    joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "joint_vel", "weight": -5e-4, "num_steps": 12000}
-    )
-
-
-##
-# Environment configuration
-##
-
-
-@configclass
-class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
-    """Configuration for the lifting environment."""
+class SO100BaseEnvCfg(ManagerBasedRLEnvCfg):
+    """Configuration for all environment."""
 
     # Scene settings
     scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=4096, env_spacing=2.5)
@@ -213,10 +136,7 @@ class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
     actions: ActionsCfg = ActionsCfg()
     commands: CommandsCfg = CommandsCfg()
     # MDP settings
-    rewards: RewardsCfg = RewardsCfg()
-    terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):
         """Post initialization."""

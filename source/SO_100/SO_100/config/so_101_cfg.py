@@ -3,11 +3,11 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Configuration for the SO100 5-DOF robot arm for livestream.
+"""Configuration for the SO101 5-DOF robot arm for livestream.
 
 The following configurations are available:
 
-* :obj:`SO100_CFG`: SO100 robot arm configuration.
+* :obj:`SO101_CFG`: SO101 robot arm configuration.
 
 """
 
@@ -18,16 +18,17 @@ from ament_index_python.packages import get_package_share_directory
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
+from isaaclab.sensors import CameraCfg, RayCasterCfg
 
 usd_package = get_package_share_directory("so101_description")
-SO100_USD_PATH=os.path.join(usd_package, "urdf", "so101_ROS2.usd")
+SO101_USD_PATH=os.path.join(usd_package, "urdf", "so101.usd")
 ##
 # Configuration
 ##
 
-SO100_CFG = ArticulationCfg(
+SO101_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=SO100_USD_PATH,
+        usd_path=SO101_USD_PATH,
         activate_contact_sensors=False,  # Adjust based on need
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
@@ -41,7 +42,7 @@ SO100_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
-            "Rotation": 0.1,
+            "Rotation": 0.0,
             "Pitch": 0.5,
             "Elbow": 0.0,
             "Wrist_Pitch": 0.0,
@@ -105,5 +106,16 @@ SO100_CFG = ArticulationCfg(
     # Using default soft limits
     soft_joint_pos_limit_factor=1.0,
 )
-"""Configuration of SO100 robot arm."""
+
+# Maybe use to detect height of the object to the GroundPlane
+#SO101_HEIGHT_SCANNER = RayCasterCfg(
+#    prim_path="{ENV_REGEX_NS}/Robot/base",
+#    update_period=0.02,
+#    offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
+#    ray_alignment="yaw",
+#    pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
+#    debug_vis=True,
+#    mesh_prim_paths=["/World/defaultGroundPlane"],
+#)
+"""Configuration of SO101 robot arm."""
 # Removed FRANKA_PANDA_HIGH_PD_CFG as it's not applicable

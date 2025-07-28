@@ -6,7 +6,7 @@
 import copy
 import dataclasses
 
-from isaaclab.assets import RigidObjectCfg, ArticulationCfg, AssetBaseCfg
+from isaaclab.assets import RigidObjectCfg, ArticulationCfg
 from isaaclab.sensors import FrameTransformerCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
@@ -17,9 +17,18 @@ import isaaclab.sim as sim_utils  # For the debug visualization
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab_tasks.manager_based.manipulation.lift import mdp
+from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.managers import CurriculumTermCfg as CurrTerm
+from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.utils import configclass
 
-from .ROS_so_100_base_env_cfg import SO100LiftEnvCfg
-from .ROS_so_100_robot_cfg import SO100_CFG  # isort: skip
+from SO_100.config.so_101_base_env import SO100BaseEnvCfg
+from SO_100.config.so_101_cfg import SO101_CFG  # isort: skip
+
+from SO_100.config import mdp
+from . import mdp
 
 ##
 # Pre-defined configs
@@ -28,18 +37,95 @@ from isaaclab.markers.config import FRAME_MARKER_CFG  # isort: skip
 # from .SO100 import SO100_CFG  # Corrected import # isort: skip
 
 
+##
+# MDP settings
+##s
+
+@configclass
+class RewardsCfg:
+    """Reward terms for the MDP."""
+
+    # Reaching reward with lower weight
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.05}, weight=2)
+
+    # Lifting reward with higher weight
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=25.0)
+
+    # Action penalty to encourage smooth movements
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
+
+    # Joint velocity penalty to prevent erratic movements
+    joint_vel = RewTerm(
+        func=mdp.joint_vel_l2,
+        weight=-1e-4,
+        params={"asset_cfg": SceneEntityCfg("robot")},
+    )
+
+
+@configclass
+class TerminationsCfg:
+    """Termination terms for the MDP."""
+
+    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+
+    object_dropping = DoneTerm(
+        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+    )
+
+
+# @configclass
+class CurriculumCfg:
+#     """Curriculum terms for the MDP."""
+
+#     # Stage 1: Focus on reaching
+#     # Start with higher reaching reward, then gradually decrease it
+#     reaching_reward = CurrTerm(
+#         func=mdp.modify_reward_weight, 
+#         params={"term_name": "reaching_object", "weight": 1.0, "num_steps": 6000}
+#     )
+
+#     # Stage 2: Transition to lifting
+#     # Start with lower lifting reward, gradually increase to encourage lifting behavior
+#     lifting_reward = CurrTerm(
+#         func=mdp.modify_reward_weight, 
+#         params={"term_name": "lifting_object", "weight": 35.0, "num_steps": 8000}
+#     )
+
+    # Stage 4: Stabilize the policy
+    # Gradually increase action penalties to encourage smoother, more stable movements
+    action_rate = CurrTerm(
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "action_rate", "weight": -5e-4, "num_steps": 12000}
+    )
+
+    joint_vel = CurrTerm(
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "joint_vel", "weight": -5e-4, "num_steps": 12000}
+    )
+
+
+##
+# Environment configuration
+##
+@configclass
+class SO100LiftEnvCfg(SO100BaseEnvCfg):
+    """Configuration for the lifting environment."""
+    rewards: RewardsCfg = RewardsCfg()
+    terminations: TerminationsCfg = TerminationsCfg()
+    curriculum: CurriculumCfg = CurriculumCfg()
+
 @configclass
 class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
 
-        # Set SO100 as robot
-        _robot_cfg = dataclasses.replace(SO100_CFG, prim_path="{ENV_REGEX_NS}/Robot")
+        # Set SO101 as robot
+        _robot_cfg = dataclasses.replace(SO101_CFG, prim_path="{ENV_REGEX_NS}/Robot")
         # Set initial rotation if needed
         if _robot_cfg.init_state is None:
             _robot_cfg.init_state = ArticulationCfg.InitialStateCfg()
-        _robot_cfg.init_state = dataclasses.replace(_robot_cfg.init_state, rot=(0.7071068, 0.0, 0.0, 0.7071068))
+        #_robot_cfg.init_state = dataclasses.replace(_robot_cfg.init_state, rot=(0.7071068, 0.0, 0.0, 0.7071068))
         self.scene.robot = _robot_cfg
 
         # Set actions for the specific robot type (SO100)
@@ -49,13 +135,6 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
             scale=0.5,
             use_default_offset=True
         )
-        
-        # self.actions.gripper_action = mdp.JointPositionActionCfg(
-        #     asset_name="robot",
-        #     joint_names=["Gripper"],
-        #     scale=2,
-        #     use_default_offset=True
-        # )
 
         # Set gripper action with wider range for better visibility
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
@@ -132,7 +211,7 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
         }
         cube_marker_cfg.prim_path = "/Visuals/CubeFrameMarker"
         
-        self.scene.cube_marker = FrameTransformerCfg(
+        self.scene.marker = FrameTransformerCfg(
             prim_path="{ENV_REGEX_NS}/Object",
             debug_vis=True,
             visualizer_cfg=cube_marker_cfg,
@@ -146,7 +225,6 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
                 ),
             ],
         )
-
 
 @configclass
 class SO100CubeLiftEnvCfg_PLAY(SO100CubeLiftEnvCfg):
