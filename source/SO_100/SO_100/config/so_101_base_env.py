@@ -17,7 +17,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransformerCfg
-from isaaclab.sensors import CameraCfg, RayCasterCfg
+from isaaclab.sensors import CameraCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg, UsdFileCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
@@ -38,8 +38,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
 
     # robots: will be populated by agent env cfg
     robot: ArticulationCfg = MISSING
-    # robot_raycaster: will be populated by agent env cfg
-    #robot_raycaser: RayCasterCfg = MISSING
+    robot_rgb: CameraCfg = MISSING
+    robot_depth: CameraCfg = MISSING
     # end-effector sensor: will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg

@@ -23,9 +23,10 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
+from ament_index_python.packages import get_package_share_directory
 
 from SO_100.config.so_101_base_env import SO100BaseEnvCfg
-from SO_100.config.so_101_cfg import SO101_CFG  # isort: skip
+from SO_100.config.so_101_cfg import SO101_CFG, SO101_RGB_SENSOR, SO101_DEPTH_SENSOR # isort: skip
 
 from SO_100.config import mdp
 from . import mdp
@@ -125,8 +126,10 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
         # Set initial rotation if needed
         if _robot_cfg.init_state is None:
             _robot_cfg.init_state = ArticulationCfg.InitialStateCfg()
-        #_robot_cfg.init_state = dataclasses.replace(_robot_cfg.init_state, rot=(0.7071068, 0.0, 0.0, 0.7071068))
         self.scene.robot = _robot_cfg
+
+        self.scene.robot_rgb = dataclasses.replace(SO101_RGB_SENSOR, prim_path="{ENV_REGEX_NS}/Robot/gripper/camera_bottom_screw_frame/camera_link/Camera_RGB")
+        self.scene.robot_depth = dataclasses.replace(SO101_DEPTH_SENSOR, prim_path="{ENV_REGEX_NS}/Robot/gripper/camera_bottom_screw_frame/camera_link/Camera_Depth")
 
         # Set actions for the specific robot type (SO100)
         self.actions.arm_action = mdp.JointPositionActionCfg(
@@ -194,7 +197,8 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
                     prim_path="{ENV_REGEX_NS}/Robot/gripper",
                     name="end_effector",
                     offset=OffsetCfg(
-                        pos=(0.01, -0.0, 0.1),
+                        pos=(0.0, 0.0, -0.1),
+                        rot = (0.0, -0.7071, 0.7071, 0.0)
                     ),
                 ),
             ],

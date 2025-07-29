@@ -14,14 +14,17 @@ The following configurations are available:
 import os
 import math
 
+import numpy as np
 from ament_index_python.packages import get_package_share_directory
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
-from isaaclab.sensors import CameraCfg, RayCasterCfg
+from isaaclab.sensors import CameraCfg
+
 
 usd_package = get_package_share_directory("so101_description")
 SO101_USD_PATH=os.path.join(usd_package, "urdf", "so101.usd")
+
 ##
 # Configuration
 ##
@@ -107,15 +110,38 @@ SO101_CFG = ArticulationCfg(
     soft_joint_pos_limit_factor=1.0,
 )
 
-# Maybe use to detect height of the object to the GroundPlane
-#SO101_HEIGHT_SCANNER = RayCasterCfg(
-#    prim_path="{ENV_REGEX_NS}/Robot/base",
-#    update_period=0.02,
-#    offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
-#    ray_alignment="yaw",
-#    pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
-#    debug_vis=True,
-#    mesh_prim_paths=["/World/defaultGroundPlane"],
-#)
+# Depth camera
+SO101_DEPTH_SENSOR = CameraCfg(
+    update_period=1 / 30,
+    width=1920,
+    height=720,
+    spawn=sim_utils.PinholeCameraCfg(
+        focal_length=1.41,
+        focus_distance=400.0
+    ),
+    offset=CameraCfg.OffsetCfg(
+        pos=(0.0, -0.01694, 0.00084),
+        rot=(0.7071, 0, 0.7071, 0.0),
+    ),
+)
+
+# RGB Camera
+SO101_RGB_SENSOR = CameraCfg(
+    update_period=1/30,
+    width=1920,
+    height=1080,
+    spawn=sim_utils.PinholeCameraCfg(
+        focal_length=1.94,
+        focus_distance=100.0,
+        horizontal_aperture=2.688,
+        vertical_aperture=1.512,
+        clipping_range=(0.05, 1.0e5),
+    ),
+    offset=CameraCfg.OffsetCfg(
+        pos=(0.0, -0.01816, 0.0009),
+        rot=(0.7071, 0, 0.7071, 0.0),
+    ),
+)
+
 """Configuration of SO101 robot arm."""
 # Removed FRANKA_PANDA_HIGH_PD_CFG as it's not applicable
