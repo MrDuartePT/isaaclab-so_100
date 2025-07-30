@@ -64,6 +64,7 @@ import gymnasium as gym
 import os
 import time
 import torch
+import carb
 
 import skrl
 from packaging import version
@@ -90,6 +91,8 @@ from isaaclab_rl.skrl import SkrlVecEnvWrapper
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
+import omni.graph.core as og
+import omni.kit.app
 
 # Allow to run without install the package
 current_file = os.path.abspath(__file__)
@@ -102,6 +105,22 @@ algorithm = args_cli.algorithm.lower()
 
 
 def main():
+    """Ensure required extensions are enabled."""
+    required_extensions = [
+        "omni.graph.bundle.action",
+        "omni.isaac.ros2_bridge",
+        "omni.isaac.core",
+        "omni.physx",
+        "omni.physx.bundle"
+    ]
+    manager = omni.kit.app.get_app().get_extension_manager()
+    for ext in required_extensions:
+        if not manager.is_extension_enabled(ext):
+            manager.set_extension_enabled_immediate(ext, True)
+            carb.log_info(f"Enabled extension: {ext}")
+        else:
+            carb.log_info(f"Extension already enabled: {ext}")
+
     """Play with skrl agent."""
     # configure the ML framework into the global skrl variable
     if args_cli.ml_framework.startswith("jax"):

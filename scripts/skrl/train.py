@@ -51,6 +51,7 @@ import gymnasium as gym
 import os
 import random
 from datetime import datetime
+import carb
 
 import skrl
 from packaging import version
@@ -84,6 +85,8 @@ from isaaclab_rl.skrl import SkrlVecEnvWrapper
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils.hydra import hydra_task_config
+import omni.graph.core as og
+import omni.kit.app
 
 # Allow to run without install the package
 current_file = os.path.abspath(__file__)
@@ -99,6 +102,22 @@ gym.pprint_registry()
 
 @hydra_task_config(args_cli.task, agent_cfg_entry_point)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: dict):
+    """Ensure required extensions are enabled."""
+    required_extensions = [
+        "omni.graph.bundle.action",
+        "omni.isaac.ros2_bridge",
+        "omni.isaac.core",
+        "omni.physx",
+        "omni.physx.bundle"
+    ]
+    manager = omni.kit.app.get_app().get_extension_manager()
+    for ext in required_extensions:
+        if not manager.is_extension_enabled(ext):
+            manager.set_extension_enabled_immediate(ext, True)
+            carb.log_info(f"Enabled extension: {ext}")
+        else:
+            carb.log_info(f"Extension already enabled: {ext}")
+
     """Train with skrl agent."""
     # override configurations with non-hydra CLI arguments
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
