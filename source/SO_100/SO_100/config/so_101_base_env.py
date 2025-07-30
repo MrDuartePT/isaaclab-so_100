@@ -126,7 +126,7 @@ class EventCfg:
     reset_all = EventTerm(func=mdp.reset_scene_to_default, mode="reset")
 
 @configclass
-class SO100BaseEnvCfg(ManagerBasedRLEnvCfg):
+class SO101BaseEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for all environment."""
 
     # Scene settings

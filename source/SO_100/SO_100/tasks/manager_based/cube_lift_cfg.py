@@ -25,7 +25,7 @@ from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
 from ament_index_python.packages import get_package_share_directory
 
-from SO_100.config.so_101_base_env import SO100BaseEnvCfg
+from SO_100.config.so_101_base_env import SO101BaseEnvCfg
 from SO_100.config.so_101_cfg import SO101_CFG, SO101_RGB_SENSOR, SO101_DEPTH_SENSOR # isort: skip
 
 from SO_100.config import mdp
@@ -47,10 +47,10 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # Reaching reward with lower weight
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.05}, weight=2)
+    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.05}, weight=20.0)
 
     # Lifting reward with higher weight
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=25.0)
+    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.02}, weight=10.0)
 
     # Action penalty to encourage smooth movements
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
@@ -78,19 +78,19 @@ class TerminationsCfg:
 class CurriculumCfg:
 #     """Curriculum terms for the MDP."""
 
-#     # Stage 1: Focus on reaching
-#     # Start with higher reaching reward, then gradually decrease it
-#     reaching_reward = CurrTerm(
-#         func=mdp.modify_reward_weight, 
-#         params={"term_name": "reaching_object", "weight": 1.0, "num_steps": 6000}
-#     )
+    # Stage 1: Focus on reaching
+    # Start with higher reaching reward, then gradually decrease it
+    reaching_reward = CurrTerm(
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "reaching_object", "weight": 25.0, "num_steps": 6000}
+    )
 
-#     # Stage 2: Transition to lifting
-#     # Start with lower lifting reward, gradually increase to encourage lifting behavior
-#     lifting_reward = CurrTerm(
-#         func=mdp.modify_reward_weight, 
-#         params={"term_name": "lifting_object", "weight": 35.0, "num_steps": 8000}
-#     )
+    # Stage 2: Transition to lifting
+    # Start with lower lifting reward, gradually increase to encourage lifting behavior
+    lifting_reward = CurrTerm(
+        func=mdp.modify_reward_weight, 
+        params={"term_name": "lifting_object", "weight": 10.0, "num_steps": 8000}
+    )
 
     # Stage 4: Stabilize the policy
     # Gradually increase action penalties to encourage smoother, more stable movements
@@ -109,14 +109,14 @@ class CurriculumCfg:
 # Environment configuration
 ##
 @configclass
-class SO100LiftEnvCfg(SO100BaseEnvCfg):
+class SO101LiftEnvCfg(SO101BaseEnvCfg):
     """Configuration for the lifting environment."""
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     curriculum: CurriculumCfg = CurriculumCfg()
 
 @configclass
-class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
+class SO101CubeLiftEnvCfg(SO101LiftEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -231,7 +231,7 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
         )
 
 @configclass
-class SO100CubeLiftEnvCfg_PLAY(SO100CubeLiftEnvCfg):
+class SO101CubeLiftEnvCfg_PLAY(SO101CubeLiftEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
